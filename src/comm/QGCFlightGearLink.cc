@@ -90,6 +90,7 @@ void QGCFlightGearLink::run()
 
     // Connect to the various HIL signals that we use to then send information across the UDP protocol to FlightGear.
     connect(_vehicle->uas(), &UAS::hilControlsChanged, this, &QGCFlightGearLink::updateControls);
+    connect(_vehicle->uas(), &UAS::hilActuatorControlsChanged, this, &QGCFlightGearLink::updateActuatorControls, Qt::QueuedConnection);
 
     connect(this, &QGCFlightGearLink::hilStateChanged, _vehicle->uas(), &UAS::sendHilState);
     connect(this, &QGCFlightGearLink::sensorHilGpsChanged, _vehicle->uas(), &UAS::sendHilGps);
@@ -230,6 +231,25 @@ void QGCFlightGearLink::updateControls(quint64 time, float rollAilerons, float p
         qDebug() << "HIL: Got NaN values from the hardware: isnan output: roll: " << qIsNaN(rollAilerons) << ", pitch: " << qIsNaN(pitchElevator) << ", yaw: " << qIsNaN(yawRudder) << ", throttle: " << qIsNaN(throttle);
     }
 }
+
+void QGCFlightGearLink::updateActuatorControls(quint64 time, quint64 flags, float ctl_0, float ctl_1, float ctl_2, float ctl_3, float ctl_4, float ctl_5, float ctl_6, float ctl_7, float ctl_8, float ctl_9, float ctl_10, float ctl_11, float ctl_12, float ctl_13, float ctl_14, float ctl_15, quint8 mode)
+{
+    Q_UNUSED(time);
+    Q_UNUSED(flags);
+    Q_UNUSED(mode);
+    Q_UNUSED(ctl_12);
+    Q_UNUSED(ctl_13);
+    Q_UNUSED(ctl_14);
+    Q_UNUSED(ctl_15);
+
+    if(!qIsNaN(ctl_0) && !qIsNaN(ctl_1) && !qIsNaN(ctl_2) && !qIsNaN(ctl_3))
+    {
+        QString state("%1\t%2\t%3\t%4\t%5\n");
+        state = state.arg(ctl_0).arg(ctl_1).arg(ctl_2).arg(true).arg(ctl_3);
+        emit _invokeWriteBytes(state.toLatin1());
+    }
+}
+
 
 void QGCFlightGearLink::_writeBytes(const QByteArray data)
 {
