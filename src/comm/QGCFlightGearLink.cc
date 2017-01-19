@@ -90,7 +90,7 @@ void QGCFlightGearLink::run()
 
     // Connect to the various HIL signals that we use to then send information across the UDP protocol to FlightGear.
     connect(_vehicle->uas(), &UAS::hilControlsChanged, this, &QGCFlightGearLink::updateControls);
-    connect(_vehicle->uas(), &UAS::hilActuatorControlsChanged, this, &QGCFlightGearLink::updateActuatorControls, Qt::QueuedConnection);
+    connect(_vehicle, &Vehicle::hilActuatorControlsChanged, this, &QGCFlightGearLink::updateActuatorControls);
 
     connect(this, &QGCFlightGearLink::hilStateChanged, _vehicle->uas(), &UAS::sendHilState);
     connect(this, &QGCFlightGearLink::sensorHilGpsChanged, _vehicle->uas(), &UAS::sendHilGps);
@@ -223,8 +223,8 @@ void QGCFlightGearLink::updateControls(quint64 time, float rollAilerons, float p
         QString state("%1\t%2\t%3\t%4\t%5\n");
         state = state.arg(rollAilerons).arg(pitchElevator).arg(yawRudder).arg(true).arg(throttle);
         emit _invokeWriteBytes(state.toLatin1());
-        //qDebug() << "Updated controls" << rollAilerons << pitchElevator << yawRudder << throttle;
-        //qDebug() << "Updated controls" << state;
+        qDebug() << "Updated controls" << rollAilerons << pitchElevator << yawRudder << throttle;
+        qDebug() << "Updated controls" << state;
     }
     else
     {
@@ -247,7 +247,14 @@ void QGCFlightGearLink::updateActuatorControls(quint64 time, quint64 flags, floa
         QString state("%1\t%2\t%3\t%4\t%5\n");
         state = state.arg(ctl_0).arg(ctl_1).arg(ctl_2).arg(true).arg(ctl_3);
         emit _invokeWriteBytes(state.toLatin1());
+        qDebug() << "Updated actuator controls time:" << time << ctl_0 << ctl_1 << ctl_2 << ctl_3 << ctl_4 << ctl_5 << ctl_6 << ctl_7 << ctl_8 << ctl_9 << ctl_10 << ctl_11 << ctl_12 << ctl_13 << ctl_14 << ctl_15;
+        //qDebug() << "Updated controls" << state;
     }
+    else
+    {
+        qDebug() << "HIL: Got NaN values from the hardware: isnan output: roll: " << qIsNaN(ctl_0) << ", pitch: " << qIsNaN(ctl_1) << ", yaw: " << qIsNaN(ctl_2) << ", throttle: " << qIsNaN(ctl_3);
+    }
+
 }
 
 
@@ -373,7 +380,7 @@ void QGCFlightGearLink::readBytes()
         ind_airspeed =  -sqrtf((2.0f*fabsf(diff_pressure)) / air_density_sea_level_15C);
     }
 
-    //qDebug() << "ind_airspeed: " << ind_airspeed << "true_airspeed: " << true_airspeed;
+    //qDebug() << "diff_pressure: " << diff_pressure << "abs_pressure: " << abs_pressure << "alt: " << alt << "alt_agl: " << alt_agl;
 
     // Send updated state
     //qDebug()  << "sensorHilEnabled: " << sensorHilEnabled;
@@ -426,7 +433,9 @@ void QGCFlightGearLink::readBytes()
         emit sensorHilRawImuChanged(QGC::groundTimeUsecs(), xacc, yacc, zacc, rollspeed, pitchspeed, yawspeed,
                                     xmag_body, ymag_body, zmag_body, abs_pressure*1e-2f, diff_pressure*1e-2f, pressure_alt, temperature, fields_changed); //Pressure in hPa for _vehicle->uas()link
 
-//        qDebug()  << "sensorHilRawImuChanged " << xacc  << yacc << zacc  << rollspeed << pitchspeed << yawspeed << xmag << ymag << zmag << abs_pressure << diff_pressure << pressure_alt << temperature;
+        //qDebug() << "sensorHilRawImuChanged " << xacc  << yacc << zacc  << rollspeed << pitchspeed << yawspeed << xmag_body << ymag_body << zmag_body;
+        //qDebug() << "sensorHilRawImuContinued " << abs_pressure*1e-2f << diff_pressure*1e-2f << pressure_alt << temperature;
+
         int gps_fix_type = 3;
         float eph = 0.3f;
         float epv = 0.6f;
@@ -435,7 +444,7 @@ void QGCFlightGearLink::readBytes()
         int satellites = 8;
 
         emit sensorHilGpsChanged(QGC::groundTimeUsecs(), lat, lon, alt, gps_fix_type, eph, epv, vel, vx, vy, vz, cog, satellites);
-//        qDebug()  << "sensorHilGpsChanged " << lat  << lon << alt  << vel;
+        //qDebug()  << "sensorHilGpsChanged " << lat  << lon << alt  << vel;
 
         // Send Optical Flow message. For now we set the flow quality to 0 and just write the ground_distance field
         float distanceMeasurement = -1.0; // -1 means invalid value
@@ -445,6 +454,8 @@ void QGCFlightGearLink::readBytes()
         }
         emit sensorHilOpticalFlowChanged(QGC::groundTimeUsecs(), 0, 0, 0.0f,
                                          0.0f, 0.0f, distanceMeasurement);
+        //qDebug() << "OpticalFlow " << distanceMeasurement;
+
     } else {
         emit hilStateChanged(QGC::groundTimeUsecs(), roll, pitch, yaw, rollspeed,
                          pitchspeed, yawspeed, lat, lon, alt,
