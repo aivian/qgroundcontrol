@@ -365,6 +365,7 @@ void UAS::receiveMessage(mavlink_message_t message)
             break;
         case MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS:
         {
+            //qDebug() << message.payload64[0] << message.payload64[1] << message.payload64[2] << message.payload64[3] << message.payload64[4] << message.payload64[5];
             mavlink_hil_actuator_controls_t hil;
             mavlink_msg_hil_actuator_controls_decode(&message, &hil);
             emit hilActuatorControlsChanged(hil.time_usec, hil.flags,

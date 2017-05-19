@@ -90,6 +90,7 @@ void QGCFlightGearLink::run()
     // Connect to the various HIL signals that we use to then send information across the UDP protocol to FlightGear.
     connect(_vehicle->uas(), &UAS::hilControlsChanged, this, &QGCFlightGearLink::updateControls);
     connect(_vehicle, &Vehicle::hilActuatorControlsChanged, this, &QGCFlightGearLink::updateActuatorControls);
+    connect(_vehicle->uas(), &UAS::hilActuatorControlsChanged, this, &QGCFlightGearLink::updateActuatorControls);
 
     connect(this, &QGCFlightGearLink::hilStateChanged, _vehicle->uas(), &UAS::sendHilState);
     connect(this, &QGCFlightGearLink::sensorHilGpsChanged, _vehicle->uas(), &UAS::sendHilGps);
@@ -246,7 +247,7 @@ void QGCFlightGearLink::updateActuatorControls(quint64 time, quint64 flags, floa
         QString state("%1\t%2\t%3\t%4\t%5\n");
         state = state.arg(ctl_0).arg(ctl_1).arg(ctl_2).arg(true).arg(ctl_3);
         emit _invokeWriteBytes(state.toLatin1());
-        qDebug() << "Updated actuator controls time:" << time << ctl_0 << ctl_1 << ctl_2 << ctl_3 << ctl_4 << ctl_5 << ctl_6 << ctl_7 << ctl_8 << ctl_9 << ctl_10 << ctl_11 << ctl_12 << ctl_13 << ctl_14 << ctl_15;
+        //qDebug() << "Updated actuator controls time:" << time << ctl_0 << ctl_1 << ctl_2 << ctl_3 << ctl_4 << ctl_5 << ctl_6 << ctl_7 << ctl_8 << ctl_9 << ctl_10 << ctl_11 << ctl_12 << ctl_13 << ctl_14 << ctl_15;
         //qDebug() << "Updated controls" << state;
     }
     else

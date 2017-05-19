@@ -490,6 +490,7 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         _handleWindCov(message);
         break;
     case MAVLINK_MSG_ID_HIL_ACTUATOR_CONTROLS:
+        //qDebug() << message.payload64[0] << message.payload64[1] << message.payload64[2] << message.payload64[3] << message.payload64[4] << message.payload64[5];
         _handleHilActuatorControls(message);
         break;
     case MAVLINK_MSG_ID_LOGGING_DATA:
